@@ -63,7 +63,23 @@ async function getClient() {
  */
 async function testConnection() {
   try {
-    const result = await pool.query('SELECT NOW() as now, version() as version');
+    const result = await pool.query(`
+      SELECT
+        NOW() as now,
+        version() as version,
+        current_database() as database_name,
+        current_user as database_user
+    `);
+
+    const colCheck = await pool.query(`
+      SELECT
+        column_name,
+        data_type,
+        is_nullable
+      FROM information_schema.columns
+      WHERE table_name = 'print_jobs'
+        AND column_name = 'lock_expires_at'
+    `);
 
     if (process.env.DATABASE_URL) {
       console.log('[DB] Conectado ao PostgreSQL via DATABASE_URL');
@@ -71,7 +87,16 @@ async function testConnection() {
       console.log('[DB] Conectado ao PostgreSQL em', process.env.DB_HOST || 'localhost');
     }
 
+    console.log('[DB] Banco:', result.rows[0].database_name);
+    console.log('[DB] Usuário:', result.rows[0].database_user);
     console.log('[DB] Versão:', result.rows[0].version.split(' ').slice(0, 2).join(' '));
+
+    if (colCheck.rows.length > 0) {
+      console.log('[DB] Coluna lock_expires_at encontrada em print_jobs');
+    } else {
+      console.log('[DB] Coluna lock_expires_at NÃO encontrada em print_jobs');
+    }
+
     return true;
   } catch (err) {
     console.error('[DB] Falha ao conectar:', err.message);
