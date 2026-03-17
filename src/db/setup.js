@@ -1,6 +1,6 @@
 // ============================================================
 // Script de setup do banco de dados
-// Executa schema.sql e seeds.sql automaticamente
+// Executa schema.sql, migrations e seeds.sql automaticamente
 // Uso: node src/db/setup.js
 //      node src/db/setup.js --seeds-only
 //      node src/db/setup.js --schema-only
@@ -28,6 +28,26 @@ async function runFile(filePath, label) {
   }
 }
 
+async function runMigrations() {
+  console.log('\n[SETUP] Executando migrações...');
+
+  const migrationSql = `
+    ALTER TABLE print_jobs
+    ADD COLUMN IF NOT EXISTS lock_expires_at TIMESTAMPTZ NULL;
+
+    CREATE INDEX IF NOT EXISTS idx_print_jobs_lock_expires_at
+    ON print_jobs (lock_expires_at);
+  `;
+
+  try {
+    await pool.query(migrationSql);
+    console.log('[SETUP] Migrações executadas com sucesso.');
+  } catch (err) {
+    console.error('[SETUP] Erro ao executar migrações:', err.message);
+    throw err;
+  }
+}
+
 async function main() {
   console.log('');
   console.log('╔══════════════════════════════════════════════╗');
@@ -37,7 +57,9 @@ async function main() {
   try {
     if (!seedsOnly) {
       await runFile(path.join(__dirname, 'schema.sql'), 'schema.sql');
+      await runMigrations();
     }
+
     if (!schemaOnly) {
       await runFile(path.join(__dirname, 'seeds.sql'), 'seeds.sql');
     }
