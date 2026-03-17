@@ -1,0 +1,24 @@
+{
+  "name": "validar-print-api",
+  "version": "1.0.0",
+  "description": "Validar Print - API central de gerenciamento de impressão",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "db:setup": "node src/db/setup.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.18.3",
+    "express-ejs-layouts": "^2.5.1",
+    "morgan": "^1.10.0",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

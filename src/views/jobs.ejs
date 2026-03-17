@@ -1,0 +1,123 @@
+<!-- Tela de Jobs de Impressão -->
+
+<!-- Filtros -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label mb-0 small fw-semibold">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <% ['pending','picked','printing','printed','error','cancelled'].forEach(s => { %>
+            <option value="<%= s %>" <%= filterStatus === s ? 'selected' : '' %>><%= s %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0 small fw-semibold">Cliente</label>
+        <select name="client" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <% clients.forEach(c => { %>
+            <option value="<%= c.slug %>" <%= filterClient === c.slug ? 'selected' : '' %>><%= c.nome %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0 small fw-semibold">Limite</label>
+        <select name="limit" class="form-select form-select-sm">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="250">250</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+        <a href="/dashboard/jobs" class="btn btn-outline-secondary btn-sm ms-1">Limpar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-list-task me-1"></i>Jobs de Impressão (<%= jobs.length %>)</span>
+    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <% if (jobs.length === 0) { %>
+      <div class="p-4 text-center text-muted">
+        <i class="bi bi-list-task" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0">Nenhum job encontrado para os filtros selecionados.</p>
+      </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Nome do Job</th>
+            <th>Cliente</th>
+            <th>Máquina</th>
+            <th>Impressora</th>
+            <th>Cópias</th>
+            <th>Criado em</th>
+            <th>Impresso em</th>
+            <th>Erro</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% jobs.forEach(job => {
+            const statusClass = {
+              pending: 'badge-pending',
+              picked: 'badge-picked',
+              printing: 'badge-printing',
+              printed: 'badge-printed',
+              error: 'badge-error',
+              cancelled: 'badge-cancelled'
+            }[job.status] || 'bg-secondary';
+          %>
+          <tr>
+            <td>
+              <span class="badge <%= statusClass %>"><%= job.status %></span>
+            </td>
+            <td class="fw-semibold" title="<%= job.id %>">
+              <%= job.job_name %>
+              <br><small class="text-muted font-monospace" style="font-size:0.65rem;"><%= job.id.substring(0,8) %>...</small>
+            </td>
+            <td><small><%= job.client_nome %></small></td>
+            <td><small><%= job.nome_da_maquina %></small></td>
+            <td><small><%= job.printer_nome || '—' %></small></td>
+            <td class="text-center"><%= job.copies %></td>
+            <td class="text-muted small"><%= new Date(job.created_at).toLocaleString('pt-BR') %></td>
+            <td class="text-muted small">
+              <% if (job.printed_at) { %>
+                <%= new Date(job.printed_at).toLocaleString('pt-BR') %>
+              <% } else { %>—<% } %>
+            </td>
+            <td>
+              <% if (job.error_message) { %>
+                <span class="text-danger small" title="<%= job.error_message %>">
+                  <i class="bi bi-exclamation-circle me-1"></i><%= job.error_message.substring(0, 40) %><%= job.error_message.length > 40 ? '...' : '' %>
+                </span>
+              <% } else { %>—<% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  // Auto-refresh a cada 3 segundos quando há jobs pending/printing
+  <% const hasPending = jobs.some(j => j.status === 'pending' || j.status === 'printing' || j.status === 'picked'); %>
+  <% if (hasPending) { %>
+    setTimeout(() => location.reload(), 3000);
+  <% } %>
+</script>

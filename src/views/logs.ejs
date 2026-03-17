@@ -1,0 +1,116 @@
+<!-- Tela de Logs -->
+
+<!-- Filtros -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-auto">
+        <label class="form-label mb-0 small fw-semibold">Nível</label>
+        <select name="level" class="form-select form-select-sm">
+          <option value="">Todos</option>
+          <% ['debug','info','warn','error'].forEach(l => { %>
+            <option value="<%= l %>" <%= filterLevel === l ? 'selected' : '' %>><%= l %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0 small fw-semibold">Entidade</label>
+        <select name="entity_type" class="form-select form-select-sm">
+          <option value="">Todas</option>
+          <% ['job','machine','printer','client','system'].forEach(e => { %>
+            <option value="<%= e %>" <%= filterEntity === e ? 'selected' : '' %>><%= e %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-auto" style="min-width:180px">
+        <label class="form-label mb-0 small fw-semibold">Evento</label>
+        <input type="text" name="event_name" class="form-control form-control-sm"
+               placeholder="ex: job.created" value="<%= filterEvent %>">
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0 small fw-semibold">Limite</label>
+        <select name="limit" class="form-select form-select-sm">
+          <option value="100">100</option>
+          <option value="200" selected>200</option>
+          <option value="500">500</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-funnel me-1"></i>Filtrar
+        </button>
+        <a href="/dashboard/logs" class="btn btn-outline-secondary btn-sm ms-1">Limpar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-journal-text me-1"></i>Logs de Eventos (<%= logs.length %>)</span>
+    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+      <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <% if (logs.length === 0) { %>
+      <div class="p-4 text-center text-muted">
+        <i class="bi bi-journal" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0">Nenhum log encontrado.</p>
+      </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Nível</th>
+            <th>Evento</th>
+            <th>Entidade</th>
+            <th>Mensagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(log => {
+            const levelClass = {
+              debug: 'text-secondary',
+              info:  'text-primary',
+              warn:  'text-warning',
+              error: 'text-danger'
+            }[log.level] || '';
+            const levelBg = {
+              debug: 'bg-light text-secondary',
+              info:  'bg-primary',
+              warn:  'bg-warning text-dark',
+              error: 'bg-danger'
+            }[log.level] || 'bg-secondary';
+          %>
+          <tr>
+            <td class="text-muted small" style="white-space:nowrap">
+              <%= new Date(log.created_at).toLocaleString('pt-BR') %>
+            </td>
+            <td>
+              <span class="badge <%= levelBg %>"><%= log.level %></span>
+            </td>
+            <td>
+              <code class="small" style="font-size:0.72rem;"><%= log.event_name %></code>
+            </td>
+            <td>
+              <% if (log.entity_type) { %>
+                <span class="badge bg-light text-dark border small"><%= log.entity_type %></span>
+                <% if (log.entity_id) { %>
+                  <br><small class="text-muted font-monospace" style="font-size:0.62rem;"><%= log.entity_id.substring(0,8) %>...</small>
+                <% } %>
+              <% } else { %>
+                <span class="text-muted">—</span>
+              <% } %>
+            </td>
+            <td class="<%= levelClass %>"><%= log.message %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>

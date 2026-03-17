@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Validar Print - <%= title %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <style>
+    :root {
+      --sidebar-width: 220px;
+      --vp-primary: #1a56db;
+      --vp-dark: #0f172a;
+    }
+    body { background: #f1f5f9; font-size: 0.9rem; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      min-height: 100vh;
+      background: var(--vp-dark);
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-brand {
+      padding: 1.25rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .sidebar-brand h5 {
+      color: #fff;
+      font-weight: 700;
+      margin: 0;
+      font-size: 1rem;
+    }
+    .sidebar-brand small { color: #94a3b8; font-size: 0.7rem; }
+    .sidebar-nav { padding: 0.75rem 0; flex: 1; }
+    .sidebar-nav .nav-link {
+      color: #cbd5e1;
+      padding: 0.55rem 1.25rem;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-nav .nav-link:hover,
+    .sidebar-nav .nav-link.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .sidebar-nav .nav-link.active {
+      background: var(--vp-primary);
+      color: #fff;
+    }
+    .sidebar-nav .nav-link i { font-size: 1rem; width: 1.2rem; text-align: center; }
+
+    /* Main content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+    }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar h4 { margin: 0; font-weight: 600; color: var(--vp-dark); font-size: 1rem; }
+    .page-body { padding: 1.5rem; }
+
+    /* Cards de stats */
+    .stat-card {
+      background: #fff;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      padding: 1.25rem;
+    }
+    .stat-card .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .stat-card .stat-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+
+    /* Badges de status */
+    .badge-pending   { background: #fbbf24; color: #000; }
+    .badge-picked    { background: #60a5fa; color: #000; }
+    .badge-printing  { background: #818cf8; color: #fff; }
+    .badge-printed   { background: #34d399; color: #000; }
+    .badge-error     { background: #f87171; color: #fff; }
+    .badge-cancelled { background: #94a3b8; color: #fff; }
+
+    /* Tabela */
+    .table { font-size: 0.82rem; }
+    .table th { font-weight: 600; color: #475569; background: #f8fafc; }
+
+    /* Online dot */
+    .dot-online  { width:8px; height:8px; border-radius:50%; background:#22c55e; display:inline-block; }
+    .dot-offline { width:8px; height:8px; border-radius:50%; background:#ef4444; display:inline-block; }
+
+    /* Card */
+    .card { border: 1px solid #e2e8f0; border-radius: 0.5rem; }
+    .card-header { background: #f8fafc; font-weight: 600; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <h5><i class="bi bi-printer-fill me-2"></i>Validar Print</h5>
+    <small>Painel de Controle</small>
+  </div>
+  <ul class="nav flex-column sidebar-nav">
+    <li class="nav-item">
+      <a class="nav-link <%= active === 'dashboard' ? 'active' : '' %>" href="/dashboard">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link <%= active === 'machines' ? 'active' : '' %>" href="/dashboard/machines">
+        <i class="bi bi-pc-display"></i> Máquinas
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link <%= active === 'printers' ? 'active' : '' %>" href="/dashboard/printers">
+        <i class="bi bi-printer"></i> Impressoras
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link <%= active === 'jobs' ? 'active' : '' %>" href="/dashboard/jobs">
+        <i class="bi bi-list-task"></i> Jobs
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link <%= active === 'logs' ? 'active' : '' %>" href="/dashboard/logs">
+        <i class="bi bi-journal-text"></i> Logs
+      </a>
+    </li>
+    <li class="nav-item mt-3" style="border-top:1px solid rgba(255,255,255,0.08); padding-top:0.5rem;">
+      <a class="nav-link" href="/health" target="_blank">
+        <i class="bi bi-activity"></i> Health Check
+      </a>
+    </li>
+  </ul>
+  <div style="padding:0.75rem 1.25rem; color:#475569; font-size:0.7rem; border-top:1px solid rgba(255,255,255,0.08);">
+    v1.0.0 MVP
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main-content">
+  <div class="topbar">
+    <h4><i class="bi bi-<%= active === 'dashboard' ? 'speedometer2' : active === 'machines' ? 'pc-display' : active === 'printers' ? 'printer' : active === 'jobs' ? 'list-task' : 'journal-text' %>"></i> <%= title %></h4>
+    <div class="d-flex align-items-center gap-2">
+      <span class="text-muted small" id="clock"></span>
+    </div>
+  </div>
+  <div class="page-body">
+    <%- body %>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Relógio no topo
+  function updateClock() {
+    document.getElementById('clock').textContent = new Date().toLocaleString('pt-BR');
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>
+</body>
+</html>

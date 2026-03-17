@@ -1,0 +1,65 @@
+<!-- Tela de Impressoras -->
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-printer me-1"></i>Impressoras Cadastradas (<%= printers.length %>)</span>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <% if (printers.length === 0) { %>
+      <div class="p-4 text-center text-muted">
+        <i class="bi bi-printer" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0">Nenhuma impressora cadastrada. O client Windows sincroniza automaticamente.</p>
+      </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Nome de Exibição</th>
+            <th>Nome no Windows</th>
+            <th>Máquina</th>
+            <th>Cliente</th>
+            <th>Tipo</th>
+            <th>Padrão</th>
+            <th>Ativa</th>
+            <th>Cadastrada em</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% printers.forEach(p => { %>
+          <tr>
+            <td class="fw-semibold"><%= p.nome_exibicao %></td>
+            <td><code class="small"><%= p.nome_sistema_windows %></code></td>
+            <td>
+              <a href="/dashboard/machines" class="text-decoration-none">
+                <span class="badge bg-light text-dark border"><i class="bi bi-pc-display me-1"></i><%= p.nome_da_maquina %></span>
+              </a>
+            </td>
+            <td class="text-muted small"><%= p.client_nome %></td>
+            <td><span class="badge bg-secondary"><%= p.tipo_impressora %></span></td>
+            <td>
+              <% if (p.is_default) { %>
+                <span class="badge bg-warning text-dark"><i class="bi bi-star-fill me-1"></i>Padrão</span>
+              <% } else { %>
+                <span class="text-muted">—</span>
+              <% } %>
+            </td>
+            <td>
+              <% if (p.ativo) { %>
+                <span class="badge bg-success">Ativa</span>
+              <% } else { %>
+                <span class="badge bg-secondary">Inativa</span>
+              <% } %>
+            </td>
+            <td class="text-muted small"><%= new Date(p.created_at).toLocaleDateString('pt-BR') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>

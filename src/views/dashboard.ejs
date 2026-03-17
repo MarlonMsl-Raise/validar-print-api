@@ -1,0 +1,129 @@
+<!-- Dashboard Principal -->
+
+<!-- Stats de Máquinas -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value text-primary" id="stat-machines-total"><%= summary.machines.total_machines %></div>
+      <div class="stat-label"><i class="bi bi-pc-display me-1"></i>Total de Máquinas</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value text-success" id="stat-machines-online"><%= summary.machines.machines_online %></div>
+      <div class="stat-label"><span class="dot-online me-1"></span>Máquinas Online</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value text-danger" id="stat-machines-offline"><%= summary.machines.machines_offline %></div>
+      <div class="stat-label"><span class="dot-offline me-1"></span>Máquinas Offline</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-value text-secondary" id="stat-logs-total"><%= summary.totalLogs %></div>
+      <div class="stat-label"><i class="bi bi-journal me-1"></i>Total de Logs</div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats de Jobs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f59e0b" id="stat-pending"><%= summary.jobs.jobs_pending %></div>
+      <div class="stat-label">Pendentes</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#60a5fa" id="stat-picked"><%= summary.jobs.jobs_picked %></div>
+      <div class="stat-label">Pegos</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#818cf8" id="stat-printing"><%= summary.jobs.jobs_printing %></div>
+      <div class="stat-label">Imprimindo</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#34d399" id="stat-printed"><%= summary.jobs.jobs_printed %></div>
+      <div class="stat-label">Impressos</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f87171" id="stat-error"><%= summary.jobs.jobs_error %></div>
+      <div class="stat-label">Com Erro</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="stat-card">
+      <div class="stat-value text-dark" id="stat-total"><%= summary.jobs.jobs_total %></div>
+      <div class="stat-label">Total de Jobs</div>
+    </div>
+  </div>
+</div>
+
+<!-- Links rápidos -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-lightning me-1"></i>Ações Rápidas</div>
+      <div class="card-body d-flex flex-column gap-2">
+        <a href="/dashboard/jobs?status=pending" class="btn btn-outline-warning btn-sm">
+          <i class="bi bi-hourglass-split me-1"></i>Ver Jobs Pendentes
+        </a>
+        <a href="/dashboard/jobs?status=error" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-exclamation-triangle me-1"></i>Ver Jobs com Erro
+        </a>
+        <a href="/dashboard/machines" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-pc-display me-1"></i>Ver Máquinas
+        </a>
+        <a href="/dashboard/logs" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-journal me-1"></i>Ver Logs Recentes
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><i class="bi bi-info-circle me-1"></i>API Endpoints</div>
+      <div class="card-body">
+        <code class="d-block mb-1">POST /jobs</code>
+        <code class="d-block mb-1">GET  /machines/:token/jobs/next</code>
+        <code class="d-block mb-1">PATCH /jobs/:id/status</code>
+        <code class="d-block mb-1">POST /machines/:token/heartbeat</code>
+        <code class="d-block mb-1">POST /machines/:token/printers/sync</code>
+        <a href="/health" target="_blank" class="btn btn-outline-success btn-sm mt-2">
+          <i class="bi bi-activity me-1"></i>Health Check
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto-refresh dos contadores a cada 5 segundos
+  async function refreshSummary() {
+    try {
+      const res = await fetch('/api/dashboard/summary');
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('stat-machines-total').textContent   = data.machines.total_machines;
+      document.getElementById('stat-machines-online').textContent  = data.machines.machines_online;
+      document.getElementById('stat-machines-offline').textContent = data.machines.machines_offline;
+      document.getElementById('stat-pending').textContent    = data.jobs.jobs_pending;
+      document.getElementById('stat-picked').textContent     = data.jobs.jobs_picked;
+      document.getElementById('stat-printing').textContent   = data.jobs.jobs_printing;
+      document.getElementById('stat-printed').textContent    = data.jobs.jobs_printed;
+      document.getElementById('stat-error').textContent      = data.jobs.jobs_error;
+      document.getElementById('stat-total').textContent      = data.jobs.jobs_total;
+      document.getElementById('stat-logs-total').textContent = data.totalLogs;
+    } catch (e) { /* ignora erros de rede */ }
+  }
+  setInterval(refreshSummary, 5000);
+</script>

@@ -1,0 +1,75 @@
+<!-- Tela de Máquinas -->
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-pc-display me-1"></i>Máquinas Cadastradas (<%= machines.length %>)</span>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+  </div>
+  <div class="card-body p-0">
+    <% if (machines.length === 0) { %>
+      <div class="p-4 text-center text-muted">
+        <i class="bi bi-pc-display" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0">Nenhuma máquina cadastrada.</p>
+      </div>
+    <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Máquina</th>
+            <th>Cliente</th>
+            <th>Machine Token</th>
+            <th>Último Heartbeat</th>
+            <th>Impressoras</th>
+            <th>Ativa</th>
+            <th>Criada em</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% machines.forEach(m => { %>
+          <tr>
+            <td>
+              <% if (m.online_real) { %>
+                <span class="dot-online me-1"></span><small class="text-success fw-semibold">Online</small>
+              <% } else { %>
+                <span class="dot-offline me-1"></span><small class="text-danger">Offline</small>
+              <% } %>
+            </td>
+            <td class="fw-semibold"><%= m.nome_da_maquina %></td>
+            <td><span class="badge bg-light text-dark border"><%= m.client_nome %></span></td>
+            <td>
+              <code class="small" style="font-size:0.7rem;">
+                <%= m.machine_token.substring(0, 20) %>...
+              </code>
+            </td>
+            <td>
+              <% if (m.ultimo_heartbeat) { %>
+                <span class="text-muted small"><%= new Date(m.ultimo_heartbeat).toLocaleString('pt-BR') %></span>
+              <% } else { %>
+                <span class="text-muted small">Nunca</span>
+              <% } %>
+            </td>
+            <td class="text-center">
+              <a href="/dashboard/printers?machine=<%= m.id %>" class="badge bg-primary text-white text-decoration-none">
+                <%= m.total_impressoras %>
+              </a>
+            </td>
+            <td>
+              <% if (m.ativo) { %>
+                <span class="badge bg-success">Sim</span>
+              <% } else { %>
+                <span class="badge bg-secondary">Não</span>
+              <% } %>
+            </td>
+            <td class="text-muted small"><%= new Date(m.created_at).toLocaleDateString('pt-BR') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</div>
