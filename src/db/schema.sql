@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS print_jobs (
   picked_at        TIMESTAMPTZ   NULL,
   printing_at      TIMESTAMPTZ   NULL,
   printed_at       TIMESTAMPTZ   NULL,
+  lock_expires_at  TIMESTAMPTZ   NULL,
   error_at         TIMESTAMPTZ   NULL,
   error_message    TEXT          NULL,
   raw_payload_json JSONB         NULL
