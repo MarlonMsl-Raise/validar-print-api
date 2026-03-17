@@ -4,7 +4,7 @@
   "description": "Validar Print - API central de gerenciamento de impressão",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node src/db/setup.js && node server.js",
     "dev": "nodemon server.js",
     "db:setup": "node src/db/setup.js"
   },
