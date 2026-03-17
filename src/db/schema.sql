@@ -132,9 +132,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_printers_updated_at ON printers;
+
 CREATE TRIGGER trigger_printers_updated_at
   BEFORE UPDATE ON printers
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================
 -- View: machines_with_status
