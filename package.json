@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/db/setup.js && node server.js",
     "dev": "nodemon server.js",
-    "db:setup": "node src/db/setup.js"
+    "db:setup": "node src/db/setup.js",
+    "db:migrate": "psql $DATABASE_URL -f src/db/migrations/001_add_lock_expires_at.sql",
+    "test": "node --test test/job-transitions.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

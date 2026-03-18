@@ -123,7 +123,7 @@ async function claimNextJob(machineId) {
     UPDATE print_jobs j
        SET status = 'picked',
            picked_at = NOW(),
-           lock_expires_at = NOW() + ($2 || ' seconds')::interval,
+           lock_expires_at = NOW() + ($2 * interval '1 second'),
            error_at = NULL,
            error_message = NULL
       FROM candidate c
@@ -160,14 +160,24 @@ async function claimNextJob(machineId) {
 /**
  * Atualiza status do job garantindo que:
  * - o job pertence à máquina autenticada
- * - a transição é válida
+ * - a transição é válida (via validTransitions)
  * - o lock é respeitado
+ *
+ * IMPORTANTE — por que SQL dinâmico aqui:
+ * Reutilizar o mesmo parâmetro posicional ($1) em dois contextos diferentes
+ * no mesmo statement causa o erro do PostgreSQL:
+ *   "inconsistent types deduced for parameter $1"
+ * porque o planner infere tipos distintos:
+ *   SET status = $1  →  character varying(20)  (tipo da coluna)
+ *   CASE WHEN $1 = 'printing'  →  text          (comparação com literal)
+ * varchar(20) e text têm OIDs diferentes; o sistema de inferência não reconcilia.
+ * Solução: cada parâmetro aparece uma única vez, com tipo não ambíguo.
  */
 async function updateStatus({ jobId, machineId, newStatus, errorMessage }) {
   const validTransitions = {
-    printing: ['picked'],
-    printed: ['picked', 'printing'],
-    error: ['picked', 'printing'],
+    printing:  ['picked'],
+    printed:   ['picked', 'printing'],
+    error:     ['picked', 'printing'],
     cancelled: ['pending', 'picked'],
   };
 
@@ -176,42 +186,56 @@ async function updateStatus({ jobId, machineId, newStatus, errorMessage }) {
     throw Object.assign(new Error(`Transição inválida para status: ${newStatus}`), { status: 400 });
   }
 
-  const result = await query(
-    `
-    UPDATE print_jobs j
-       SET status = $1,
-           printing_at = CASE WHEN $1 = 'printing' THEN NOW() ELSE j.printing_at END,
-           printed_at  = CASE WHEN $1 = 'printed'  THEN NOW() ELSE j.printed_at  END,
-           error_at    = CASE WHEN $1 = 'error'    THEN NOW() ELSE j.error_at    END,
-           error_message = CASE
-             WHEN $1 = 'error' THEN $4
-             WHEN $1 IN ('printed', 'cancelled') THEN NULL
-             ELSE j.error_message
-           END,
-           lock_expires_at = CASE
-             WHEN $1 = 'printing' THEN NOW() + ($5 || ' seconds')::interval
-             ELSE NULL
-           END
-     WHERE j.id = $2
-       AND j.machine_id = $3
-       AND j.status = ANY($6::text[])
-     RETURNING *;
-    `,
-    [
-      newStatus,
-      jobId,
-      machineId,
-      errorMessage || 'Erro desconhecido',
-      JOB_LOCK_SECONDS,
-      allowedFrom,
-    ]
-  );
+  // Constrói SET dinamicamente: cada $n usado uma única vez, sem CASE sobre $1
+  const setClauses = [];
+  const params     = [];
+  let   idx        = 1;
+
+  // $1 = newStatus — aparece somente aqui, tipo não ambíguo
+  setClauses.push(`status = $${idx++}`);
+  params.push(newStatus);
+
+  // Campos por branch — sem CASE que reutilize $1
+  if (newStatus === 'printing') {
+    setClauses.push(`printing_at     = NOW()`);
+    // Intervalo como literal SQL: evita passar integer com || (string concat)
+    setClauses.push(`lock_expires_at = NOW() + interval '${JOB_LOCK_SECONDS} seconds'`);
+  } else if (newStatus === 'printed') {
+    setClauses.push(`printed_at      = NOW()`);
+    setClauses.push(`lock_expires_at = NULL`);
+  } else if (newStatus === 'error') {
+    setClauses.push(`error_at        = NOW()`);
+    setClauses.push(`error_message   = $${idx++}`);  // único lugar onde errorMessage entra
+    setClauses.push(`lock_expires_at = NULL`);
+    params.push(errorMessage || 'Erro desconhecido');
+  } else if (newStatus === 'cancelled') {
+    setClauses.push(`lock_expires_at = NULL`);
+  }
+
+  // WHERE: cast explícito de uuid evita ambiguidade em DBs estritos
+  const idIdx      = idx++;
+  const machineIdx = idx++;
+  const fromIdx    = idx++;
+
+  params.push(jobId);
+  params.push(machineId);
+  params.push(allowedFrom);
+
+  const sql = `
+    UPDATE print_jobs
+       SET ${setClauses.join(',\n           ')}
+     WHERE id         = $${idIdx}::uuid
+       AND machine_id = $${machineIdx}::uuid
+       AND status     = ANY($${fromIdx}::text[])
+     RETURNING *
+  `;
+
+  const result = await query(sql, params);
 
   if (result.rows.length === 0) {
+    // Distingue 404 / 403 / 409 para o client saber o que aconteceu
     const current = await query(
-      `SELECT id, status, machine_id, lock_expires_at
-       FROM print_jobs
-       WHERE id = $1`,
+      `SELECT id, status, machine_id FROM print_jobs WHERE id = $1::uuid`,
       [jobId]
     );
 
@@ -234,8 +258,8 @@ async function updateStatus({ jobId, machineId, newStatus, errorMessage }) {
   const job = result.rows[0];
 
   if (newStatus === 'printing') await logService.logJobPrinting(jobId);
-  if (newStatus === 'printed') await logService.logJobPrinted(jobId);
-  if (newStatus === 'error') await logService.logJobError(jobId, errorMessage || 'Erro desconhecido');
+  if (newStatus === 'printed')  await logService.logJobPrinted(jobId);
+  if (newStatus === 'error')    await logService.logJobError(jobId, errorMessage || 'Erro desconhecido');
 
   return job;
 }
